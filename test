@@ -1,0 +1,48 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+from statsmodels.tsa.statespace.sarimax import SARIMAX
+
+# Create a DataFrame from the provided dataset
+data = pd.DataFrame({
+    'Location': ['GTOWN'] * 34,
+    'Date': pd.to_datetime([
+        '202009', '202010', '202011', '202012', '202101', '202102', '202103', '202104', '202105', '202106',
+        '202107', '202108', '202109', '202110', '202111', '202112', '202201', '202202', '202203', '202204',
+        '202205', '202206', '202207', '202208', '202209', '202210', '202211', '202212', '202301', '202302',
+        '202303', '202304', '202305', '202306', '202307', '202308'
+    ], format='%Y%m'),
+    'Sales Amount': [
+        32467, 39684, 33303, 37386, 36879, 23383, 32549, 14813, 17690, 16377, 16436, 14343, 11957, 12974, 13495,
+        13601, 17090, 14512, 15704, 13351, 4086, -771, 811, 3094, 13291, 10902, 15525, 16392, 14225, 12590,
+        12302, 7096, 1030, 1125, 4860, 7333
+    ]
+})
+
+# Sort the DataFrame by date
+data.sort_values('Date', inplace=True)
+data.set_index('Date', inplace=True)
+
+# Define the SARIMA model
+order = (1, 1, 1)  # Non-seasonal order (p, d, q)
+seasonal_order = (1, 1, 1, 12)  # Seasonal order (P, D, Q, s)
+
+# Fit the SARIMA model
+model = SARIMAX(data['Sales Amount'], order=order, seasonal_order=seasonal_order)
+results = model.fit()
+
+# Forecast future sales
+forecast_steps = 12  # You can adjust the number of steps for forecasting
+forecast = results.get_forecast(steps=forecast_steps)
+
+# Plot the forecasted sales
+forecasted_data = forecast.predicted_mean
+conf_int = forecast.conf_int()
+plt.plot(data.index, data['Sales Amount'], label='Observed')
+plt.plot(forecasted_data.index, forecasted_data.values, color='r', label='Forecasted')
+plt.fill_between(conf_int.index, conf_int.iloc[:, 0], conf_int.iloc[:, 1], color='pink')
+plt.xlabel('Date')
+plt.ylabel('Sales Amount ($)')
+plt.title('Butter Sales Forecast')
+plt.legend()
+plt.grid(True)
+plt.show()
